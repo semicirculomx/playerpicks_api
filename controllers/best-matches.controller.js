@@ -124,29 +124,32 @@ exports.addPicksAndPostsToMatch = async (bets, pickId, postId) => {
     }
 }  
 exports.getBestMatches = async (req, res, next) => {
-    try {
-        assert(mongoose.connection.readyState, 1);
-        let user = req.user;
-        assert.ok(user);
-        let page = req.query['p'];
-        let best = req.query['best'];
-        let matches;
-        if (best === 'true') {
-          matches = await Match.getMatches({query: {}, isBestMatchOnly: true , page});
-        } else {
-          matches = await Match.getMatches({page});
-        }
-          matches = await serializeMatches(matches, user);
-        const oneWeekFromNow = new Date();
-        oneWeekFromNow.setDate(oneWeekFromNow.getDate() + 7);
-         const filteredMatches = matches.filter((match) => {
-           return new Date(match.commence_time) <= oneWeekFromNow;
-         });
-    
-        res.json(filteredMatches);
-      } catch (err) {
-         next(err);
-      }
+  try {
+    assert(mongoose.connection.readyState, 1);
+    let user = req.user;
+    assert.ok(user);
+    let page = req.query['p'];
+    let best = req.query['best'];
+    let matches;
+    if (best === 'true') {
+      matches = await Match.getMatches({query: {}, isBestMatchOnly: true, page});
+    } else {
+      matches = await Match.getMatches({page});
+    }
+    matches = await serializeMatches(matches, user);
+    const today = new Date();
+    const oneWeekFromNow = new Date();
+    oneWeekFromNow.setDate(today.getDate() + 7);
+
+    const filteredMatches = matches.filter((match) => {
+      const commenceTime = new Date(match.commence_time);
+      return commenceTime >= today && commenceTime <= oneWeekFromNow;
+    });
+
+    res.json(filteredMatches);
+  } catch (err) {
+    next(err);
+  }
 }
 
 exports.getMatch = async (req, res, next) => {
