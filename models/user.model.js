@@ -201,9 +201,11 @@ userSchema.statics.getSuggestions = async function ({
     let { friend_ids } = await Friendship.findOne({ user_id })
     // personalised later on
     return this.find({
-        _id: { $ne: user_id },
-        _id: { $nin: friend_ids }
-    })
+        $and: [
+            { _id: { $ne: user_id } },
+            { _id: { $nin: friend_ids } }
+        ]
+        })
         .sort('-followers_count -statuses_count -friends_count -created_at') // my social media algorithm (¬‿¬)
         .limit(25)
 }

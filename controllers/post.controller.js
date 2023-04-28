@@ -57,7 +57,7 @@ exports.uploadImagesToCloudinary = async (req, res, next) => {
 exports.createPostAndPick = async (req, res, next) => {
     try {
       const user = req.user;
-      const { post: { post_title, htmlContent, text }, pick, ...rest } = req.body;
+      const { post: { post_title, htmlContent, text, post_categories }, pick, ...rest } = req.body;
   
       let _post = null;
       let pickStored = null;
@@ -67,7 +67,8 @@ exports.createPostAndPick = async (req, res, next) => {
         const postBody = {
           text: filterInput(text, 'html', { max_length: 60000, identifier: 'Post' }),
           post_title,
-          htmlContent
+          htmlContent,
+          post_categories: post_categories.length ? post_categories.map((cat) => cat.toLowerCase()): post_categories,
         };
         _post = await Post.addOne({ user_id: user._id }, postBody);
       }

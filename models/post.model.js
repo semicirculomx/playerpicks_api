@@ -35,6 +35,7 @@ const postSchema = mongoose.Schema({
         default: 'pending'
     },
     "post_category": { type: String, default: null },
+    "post_categories": [{ type: String, default: null }],
     "source": String,
     "truncated": { type: Boolean, default: false },
     "in_reply_to_status_id": { type: mongoose.Schema.Types.Long, default: null },
@@ -43,7 +44,6 @@ const postSchema = mongoose.Schema({
     "in_reply_to_user_id_str": { type: String, default: null },
     "in_reply_to_screen_name": { type: String, default: null },
     "user": {
-        
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
