@@ -90,6 +90,9 @@ exports.createPostAndPick = async (req, res, next) => {
   
       if (_post) {
         try {
+            if(req.body.post.bets){
+                storedBets = await addPicksAndPostsToMatch(req.body.post.bets, pickStored?._id, _post?._id);
+            }
           const updatedPost = await Post.findOneAndUpdate({ _id: _post._id }, {
             $set: {
               pick: pickStored?._id,

@@ -34,7 +34,6 @@ const postSchema = mongoose.Schema({
         enum: ['pending', 'approved', 'rejected'],
         default: 'pending'
     },
-    "post_category": { type: String, default: null },
     "post_categories": [{ type: String, default: null }],
     "source": String,
     "truncated": { type: Boolean, default: false },

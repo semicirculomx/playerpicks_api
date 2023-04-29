@@ -115,7 +115,8 @@ exports.addPicksAndPostsToMatch = async (bets, pickId, postId) => {
         let { match } = body
       
          match = await Match.addOne({match})
-        res.status(200).json({
+         match = await serializeMatch(match, req.user)
+         res.status(200).json({
             'msg': 'match was succesfully added',
             match
         });
