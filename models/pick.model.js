@@ -56,7 +56,7 @@ const pickSchema = mongoose.Schema({
     },
     "status": 
     {type: String,
-     enum: ['pending', 'won', 'lost', 'void'], 
+     enum: ['pending', 'won', 'lost', 'void', 'cashback', 'half-won', 'half-lost', 'canceled'], 
      default: 'pending'
     },
     "created_at": { type: Date, default: Date.now },
