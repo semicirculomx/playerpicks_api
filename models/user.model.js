@@ -51,15 +51,19 @@ const userSchema = mongoose.Schema({
 
     "notifications_enabled_device_count": { type: String, default: 0 },
     "bank": { type: Number, default: 0 },
-    "bank_history": [{
-        "amount": { type: Number, default: 0 },
-        "date": { type: Date, default: Date.now() },
-        "description": { type: String, default: null }
-    }],
-    "role" : { 
-        enum: ['admin', 'user','suscriber'],
-        type: String, 
-         default: 'user' 
+    "accBank": { type: Number, default: 0 },
+    "role": {
+        enum: ['admin', 'user', 'suscriber', 'tipster'],
+        type: String,
+        default: 'user'
+    },
+    "lost_bets": {
+        type: Number,
+        default: 0
+    },
+    "won_bets": {
+        type: Number,
+        default: 0
     },
     //twitter deprecated ones
     /*
@@ -101,12 +105,14 @@ userSchema.statics.createNew = async function (userDat, authDat) {
     }
 }
 userSchema.statics.countPosts = async function (user_id) {
-    return mongoose.model('Post').countDocuments({ user: user_id })
+    return mongoose.model('Post').countDocuments({ user: user_id, in_reply_to_status_id: null })
+}
+userSchema.statics.countPicks = async function(user_id) {
+    return mongoose.model('Pick').countDocuments({user: user_id})
 }
 userSchema.statics.notificationDevices = async function (user_id) {
     const doc = await mongoose.model('Notification').findOne({ user_id }, 'subscriptions')
     if (!doc || !doc.subscriptions) return 0
-    console.log(doc.subscriptions)
     return doc.subscriptions.length
 }
 
@@ -205,11 +211,98 @@ userSchema.statics.getSuggestions = async function ({
             { _id: { $ne: user_id } },
             { _id: { $nin: friend_ids } }
         ]
-        })
+    })
         .sort('-followers_count -statuses_count -friends_count -created_at') // my social media algorithm (¬‿¬)
         .limit(25)
 }
 
+// Define a static function on the User schema
+userSchema.methods.updateUserFromPick = async function (pick, prevPick) {
+    let accBank = this.accBank
+    let won_bets = this.won_bets
+    let lost_bets = this.lost_bets
+
+    try {
+        if(accBank === null) {
+            accBank = 0;
+       }
+       if(won_bets === null) {
+            won_bets = 0;
+       }
+       if(lost_bets === null) {
+           lost_bets = 0;
+       } 
+       
+        if (prevPick) {
+            if (pick.status === 'cashback' || pick.status === 'canceled' || pick.status === 'void') {
+                if (prevPick.status === 'won') {
+                    won_bets--
+                    accBank = this.accBank - (pick.profit)// add stake * 250 to accBank
+                } else if (prevPick.status === 'lost' || prevPick.status === 'pending') {
+                    if(prevPick.status === 'lost') {
+                        lost_bets--
+                    }
+                    accBank = this.accBank + (pick.stake * 250)
+                }
+            } else if (pick.status === 'won') {
+                 won_bets++
+                if (prevPick.status === 'cashback' || prevPick.status === 'canceled' || prevPick.status === 'void') {
+                    accBank = this.accBank + pick.profit
+                    
+                } else if (prevPick.status === 'lost' || prevPick.status === 'pending') {
+                    if(prevPick.status === 'lost') {
+                        lost_bets--
+                    }
+                    accBank = this.accBank + ((pick.stake * 250) + pick.profit)
+                }
+            } else if (pick.status === 'lost') {
+                lost_bets++
+                if (prevPick.status === 'cashback' || prevPick.status === 'canceled' || prevPick.status === 'void') {
+                    accBank = this.accBank - ((pick.stake * 250))
+                } else if (prevPick.status === 'won') {
+                     won_bets--
+                    accBank = this.accBank - ((pick.stake * 250) + pick.profit)
+                }
+            } else if (pick.status === 'pending') {
+                if (prevPick.status === 'cashback' || prevPick.status === 'canceled' || prevPick.status === 'void') {
+                    accBank = this.accBank - ((pick.stake * 250))
+                } else if (prevPick.status === 'won') {
+                    won_bets--
+                    accBank = this.accBank - ((pick.stake * 250) + pick.profit)
+                } else if(prevPick.status === 'lost') {
+                    lost_bets--
+                }
+            }
+        } else {
+            if (pick.$isDeleted()) {
+                won_bets *= -1
+                lost_bets *= -1
+                pick.profit *= -1
+                pick.stake *= -1
+            }
+            if (pick.status === 'won') {
+                won_bets++
+                accBank = this.accBank + pick.profit
+            } else if (pick.status === 'lost' || pick.status === 'pending') {
+                if(pick.status === 'lost'){
+                    lost_bets++
+                }
+                accBank = this.accBank - (pick.stake * 250)
+            }
+        }
+        // Update user document in database
+        return await this.updateOne({
+            $set: {
+                accBank: accBank,
+                won_bets: won_bets,
+                lost_bets: lost_bets
+            }
+        })
+    } catch (error) {
+        console.log('error al actualizar el bank usuario')
+    }
+
+}
 async function user_genId() {
     /**
     * generates simple incrementing value

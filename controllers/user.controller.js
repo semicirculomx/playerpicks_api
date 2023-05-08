@@ -28,6 +28,7 @@ exports.updateUser = async (req, res, next) => {
             location,
             website,
             profile_image_url_https,
+            bank
         } = req.body
 
         name = filterInput(name, 'name', { identifier: 'Name' })
@@ -56,6 +57,7 @@ exports.updateUser = async (req, res, next) => {
                     default_profile_image: false,
                     default_profile: false,
                     'entities.url.urls': [url],
+                    bank
                 },
             },
             { new: true }

@@ -62,7 +62,7 @@ const pickSchema = mongoose.Schema({
     "created_at": { type: Date, default: Date.now },
     
 })
-let sPage = 15
+let sPage = 10
 
 /**
 * addes a pick for specific user
@@ -132,27 +132,27 @@ pickSchema.statics.getUserTimeline = async function ({
         await mongoose.model('home_timeline')
             .bulkAddPicks(quer.follower_ids.concat(doc.user), { id_pick_added: doc._id });
     }
+    let user = await mongoose.model('User').findById({ _id: doc.user });
+    user.updateUserFromPick(doc)
     next();
 });
 pickSchema.pre('deleteMany', { document: true, query: true }, next => {
     next(new Error('deletemany is not configured yet, use deleteOne instead'));
 });
 /** QUERY middleware */
-pickSchema.post('deleteOne', { document: true, query: true }, async doc => {
+pickSchema.post('deleteOne', { document: true, query: true }, async (doc, next) => {
     try {
-        //update statuses_count in User
-        // await mongoose.model('User').findOneAndUpdate({ _id: doc.user }, {
-        //     $inc: { statuses_count: 1 }
-        // });
+        let user = await mongoose.model('User').findOne({ _id: doc.user });
         // update  follower's and itself's timeline,
         let quer = await mongoose.model('Friendship').findOne({ user_id: doc.user }, 'follower_ids');
         if (quer) {
             await mongoose.model('home_timeline')
                 .bulkRemovePicks(quer.follower_ids.concat(doc.user), { id_pick_removed: doc._id });
         }
+        user.updateUserFromPick(doc)
+        next()
     } catch (err) {
-        console.log(err)
-        throw err
+        next(err) 
     }
 });
 async function pick_genId() {

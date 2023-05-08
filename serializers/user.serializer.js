@@ -7,19 +7,24 @@ exports.serializeUser = async (user, client = null) => {
     if (!user)
         return
 
-    if (user.toObject)
-        user = user.toObject()
     let followers_count = await mongoose.model('Friendship').countFollowers(user._id)
     let friends_count = await mongoose.model('Friendship').countFriends(user._id)
     let statuses_count = await mongoose.model('User').countPosts(user._id)
+    let picks_count = await mongoose.model('User').countPicks(user._id)
     let following = await mongoose.model('Friendship').isFollowing(client && client._id, user._id)
+    let totalBank = user.accBank + user.bank
     const notifications_enabled_device_count = await mongoose.model('User').notificationDevices(user._id)
+    
+    if (user.toObject)
+    user = user.toObject()
     return ({
         ...user,
         following,
         followers_count,
         friends_count,
         statuses_count,
+        picks_count,
+        totalBank,
         notifications_enabled_device_count
     })
 }

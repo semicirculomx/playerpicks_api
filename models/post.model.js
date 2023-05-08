@@ -97,7 +97,7 @@ const postSchema = mongoose.Schema({
         }
       ],
 }, { id: false })
-let sPage = 15
+let sPage = 10
 /**
 * addes a post for specific user
 * @param {String} username - screen_name of user
@@ -315,7 +315,6 @@ postSchema.post('deleteOne', { document: true, query: true }, async doc => {
         // update  follower's and itself's timeline,
         let quer = await mongoose.model('Friendship').findOne({ user_id: doc.user }, 'follower_ids');
         if (quer) {
-            console.log(quer, doc.user)
             await mongoose.model('home_timeline')
                 .bulkRemovePosts(quer.follower_ids.concat(doc.user), { id_post_removed: doc._id });
         }

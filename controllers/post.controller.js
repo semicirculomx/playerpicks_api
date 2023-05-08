@@ -73,7 +73,7 @@ exports.createPostAndPick = async (req, res, next) => {
         _post = await Post.addOne({ user_id: user._id }, postBody);
       }
   
-      if (pick?.bets?.length) {
+      if (pick.bets?.length) {
         const { bets, ..._pick } = pick;
         pickStored = await Pick.addOne({ user_id: user._id }, _pick);
         storedBets = await addPicksAndPostsToMatch(bets, pickStored._id, _post?._id);
@@ -90,8 +90,8 @@ exports.createPostAndPick = async (req, res, next) => {
   
       if (_post) {
         try {
-            if(req.body.post.bets){
-                storedBets = await addPicksAndPostsToMatch(req.body.post.bets, pickStored?._id, _post?._id);
+            if(!pick.bets?.length){
+                storedBets = await addPicksAndPostsToMatch(req.body.post.bets, null, _post?._id);
             }
           const updatedPost = await Post.findOneAndUpdate({ _id: _post._id }, {
             $set: {
@@ -335,15 +335,28 @@ exports.replyToPost = async (req, res, next) => {
 
 exports.deleteOnePost = async (req, res, next) => {
     try {
-      const post = await Post.findById(req.params.id).populate("user");
+      let post = await Post.findById(req.params.id);
+      let pick;
       if (!post) {
         return res.status(404).json({ message: "Post not found" });
       }
-  
+
+      if (post.user.toString() !== req.user._id.toString()) {
+        return res.status(401).json({ message: 'Not authorized to delete post' });
+      }
+
       // Create an array of Promises for the async actions
       const asyncActions = [];
   
       // Delete the post and associated pick
+      if (post.pick) {
+        pick = await Pick.findById({ _id: post.pick });
+        for (let bet of pick.bets) {
+          asyncActions.push(Match.findByIdAndUpdate(bet.match, { $pull: { picks: pick._id } }));
+        }
+        asyncActions.push(pick.deleteOne());
+      }
+
       for (let match of post.matches) {
         asyncActions.push(Match.findByIdAndUpdate(match, { $pull: { posts: post._id } }));
       }
@@ -354,14 +367,6 @@ exports.deleteOnePost = async (req, res, next) => {
   
       asyncActions.push(PostEngagement.deleteMany({ post_id: post._id }));
   
-      if (post.pick) {
-        var pick = await Pick.findById({ _id: post.pick });
-        for (let bet of pick.bets) {
-          asyncActions.push(Match.findByIdAndUpdate(bet.match, { $pull: { picks: pick._id } }));
-        }
-        asyncActions.push(pick.deleteOne());
-      }
-  
       let posts = await Post.find({ quoted_status: post._id }, "_id");
       for (let post of posts) {
         asyncActions.push(Post.findOneAndDelete({ _id: post._id }));
@@ -370,9 +375,10 @@ exports.deleteOnePost = async (req, res, next) => {
       }
   
       asyncActions.push(post.deleteOne());
-  
       // Wait for all Promises to complete
       await Promise.all(asyncActions);
+
+      post = await serializePost(post, req.user)
   
       res.status(200).json({
         message: "Post eliminado correctamente",

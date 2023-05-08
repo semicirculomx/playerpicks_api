@@ -23,7 +23,7 @@ const {
     getFollowers,
     getFriends,
 } = require('../controllers/user.controller')
-const { homeTimeline, userTimeline } = require('../controllers/timeline.controller')
+const { homeTimeline, userPosts, userTimeline, userPicks } = require('../controllers/timeline.controller')
 const { createMatch, getBestMatches, getMatch, deleteMatch } = require('../controllers/best-matches.controller')
 const { getMyPicks, updatePick, deleteOnePick , getPick} = require('../controllers/picks.controller')
 const { search, trends, userSuggests } = require('../controllers/search.controller')
@@ -94,6 +94,8 @@ router.delete('/pick/:id', ensureLoggedIn, deleteOnePick)
 
 /* GET user timeline */
 router.get('/user_timeline/:username', userTimeline)
+router.get('/user_posts/:username', userPosts)
+router.get('/user_picks/:username', userPicks)
 
 /* GET user friends and followers */
 router.get('/followers/:username', getFollowers)
@@ -122,7 +124,7 @@ router.post('/unrepost', ensureLoggedIn, unrepostPost)
 
 /* GET get a single post. */
 router.get('/post/:postId',  getPost)
-router.delete('/posts/:id', ensureLoggedIn, deleteOnePost)
+router.delete('/post/:id', ensureLoggedIn, deleteOnePost)
 
 router.post('/like/:postId', ensureLoggedIn, likePost)
 router.post('/unlike/:postId', ensureLoggedIn, unlikePost)

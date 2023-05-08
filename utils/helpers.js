@@ -41,6 +41,8 @@ function filterInput(
         username: RegExp(`^[_a-zA-Z0-9]{${min},${max}}$`),
         password: RegExp(`^\\S{${min},${max}}$`),
         name: RegExp(`^.{${min},${max}}$`),
+        number: RegExp(`^-?([1-9]\\d{0,7}|0)(\\.\\d+)?$|^100000000$`),
+        natural: RegExp(`^\\d{1,8}(\\.\\d+)?$`)
     }
     if (!reg) {
         reg = regexes[type]
@@ -48,19 +50,36 @@ function filterInput(
     if (reg) {
         if (!reg.test(input)) {
             throw Error(
-                `${identifier} must match regex: ${reg} (range between ${min} and ${max} characters)`
+                `${identifier} No coincide: ${reg} (rango de caracteres entre ${min} y ${max})`
             )
         }
     }
-    //else custom || html
-    // if (type === 'html')
-    //     input = DOMPurify.sanitize(input, { ALLOWED_TAGS: ['b'] }).trim()
-    if (input.length > max || input.length < min) {
-        throw Error(`${identifier} must be minimum ${min} and maximum ${max} characters`)
+    if (type === 'number') {
+        let number = Number(input);
+        if (number > 100000000 || number < -100000000 || !Number.isInteger(number)) {
+            throw Error(`${identifier} debe ser un número entero entre -100000000 y 100000000`);
+        }
+        if (number >= 0 && number < 100) {
+            throw Error(`${identifier} el número debe ser mayor igual que 100`);
+        }
+        if (number < 0 && number > -100) {
+            throw Error(`${identifier} el número debe ser menor igual que -100`);
+        }
     }
-    if (input.includes('\n'))
-        // long text, strip of multiple newlines etc
-        input = input.replace(/\n+/g, '\n').trim()
+    else if (type === 'natural') {
+        let number = Number(input);
+        if (number <= 0 || number >= 100000000) {
+            throw Error(`${identifier} debe ser un número 0 y 100000000`);
+        }
+    }
+    else {
+        if (input.length > max || input.length < min) {
+            throw Error(`${identifier} minimo de caracteres ${min} , máximo de ${max} caracteres`)
+        }
+        if (input.includes('\n'))
+            // long text, strip of multiple newlines etc
+            input = input.replace(/\n+/g, '\n').trim()
+    }
     return input
 }
 function getRandomProfileUrl() {
