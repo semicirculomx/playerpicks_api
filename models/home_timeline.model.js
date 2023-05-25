@@ -60,21 +60,16 @@ timelineSchema.statics.getTimeline = async function ({
             .findOne({ screen_name }, '_id');
         user_id = _id;
     }
-    let { posts, picks } = await mongoose.model('home_timeline') //or this
+    let { posts } = await mongoose.model('home_timeline') //or this
         .findOne({ user_id },
             { 
             posts: { $slice: [s * (p - 1), s] },
-            picks: { $slice: [s * (p - 1), s] },
          }) //returns
         .populate({
             path: 'posts.post_id',           
         })
-        .populate({
-            path: 'picks.pick_id',            
-        })
     posts = posts.map(obj => obj.post_id);
-    picks = picks.map(obj => obj.pick_id);
-    return {posts, picks};
+    return {posts};
 }
 /**<Model>.bulkAddPosts
  * calls <Document>.bulkAddPosts() of each user_id with remaining args

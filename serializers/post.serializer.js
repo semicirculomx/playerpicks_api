@@ -15,10 +15,12 @@ exports.serializePost = async (post, client, level = 0) => {
         .populate('quoted_status')
         .populate({
             path: 'pick',
-            populate: {
-              path: 'bets.match'
-            }
+            populate: [{
+                path: 'bets.match',
+                model: 'Match'
+            }, {path: 'user'}]
           })
+
         .execPopulate()
 
     //serialize embedded posts

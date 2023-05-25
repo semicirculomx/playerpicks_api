@@ -17,10 +17,8 @@ exports.homeTimeline = async (req, res, next) => {
         let page = req.query['p'];
         let {posts, picks} = /*list*/await home_timeline.getTimeline({ user_id: user._id }, page);
         posts = await serializePosts(posts, req.user)
-        picks = await serializePicks(picks)
         res.json({
             posts, //posts: null or empty when exhausts,
-            picks //picks: null or empty when exhausts
         })
     } catch (err) {
         next(err)
