@@ -3,6 +3,11 @@ const passport = require('passport')
 const User = require('../models/user.model')
 const { ensureLoggedIn } = require('../utils/middlewares')
 const { filterInput } = require('../utils/helpers')
+const bcrypt = require('bcryptjs');
+const { serializeUser } = require('../serializers/user.serializer')
+const Auth = require('../models/auth.model')
+
+
 // const { destroyAuthSession: destroySocketSession } = require('../socketApi')
 
 const router = express.Router()
@@ -91,4 +96,37 @@ router.post('/signup', async (req, res) => {
         })
     }
 })
+/*** */
+router.post('/password-reset', async (req, res) => {
+    try {
+        const { username, newPassword, confirmPassword } = req.body;
+
+        // Validar que los campos no estén vacíos y que la nueva contraseña coincida con la confirmación
+        if (!username || !newPassword || !confirmPassword) {
+            return res.status(400).json({ message: 'Faltan datos.' });
+        }
+
+        if (newPassword !== confirmPassword) {
+            return res.status(400).json({ message: 'La nueva contraseña no coincide con la confirmación.' });
+        }
+
+        // Buscar al usuario en la base de datos
+        // Generar el hash de la nueva contraseña
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        let user = await User.findOne({ screen_name: username }, '_id');
+        let auth = await Auth.findOneAndUpdate({user_id: user._id},
+            {
+                $set: {
+                    passwordHash: hashedPassword
+                },
+            })
+        if (user && auth) {
+            res.json({ message: 'Contraseña cambiada exitosamente.' });
+        } else throw Error('No se ha encontrado un usuario asociado a ese nombre')
+    } catch (err) {
+        console.log('error in /password-reset', err);
+        res.status(500).json({ message: 'No podemos procesar tu registro en este momento. Espera unos minutos y vuelve a intentar!' });
+    }
+});
+
 module.exports = router
