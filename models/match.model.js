@@ -99,33 +99,51 @@ const matchSchema = mongoose.Schema({
 * @returns {Promise} -  One returned by mongoose
 */
 
-matchSchema.statics.addOne = async ({
-    match
-  }, pickId, postId) => {
-    let matchStored
-    const id = await match_genId()
-    const id_str = id.toString()
-      matchStored = await mongoose.model('Match').findOneAndUpdate(
-        { match_id: match.match_id },
-        {
-          $setOnInsert: {
-            ...match,
-            ...(!match.id ? { id } : {}),
-            ...(!match.id_str ? { id_str } : {}),
-          },
-          $addToSet: {
-            picks: pickId || null,
-            posts: postId || null,
-          },
-        },
-        { upsert: true, new: true }
-      )
+// matchSchema.statics.addOne = async ({
+//     match
+//   }, pickId, postId) => {
+//     let matchStored
+//     const id = await match_genId()
+//     const id_str = id.toString()
+//       matchStored = await mongoose.model('Match').findOneAndUpdate(
+//         { match_id: match.match_id },
+//         {
+//           $setOnInsert: {
+//             ...match,
+//             ...(!match.id ? { id } : {}),
+//             ...(!match.id_str ? { id_str } : {}),
+//           },
+//           $addToSet: {
+//             picks: pickId || null,
+//             posts: postId || null,
+//           },
+//         },
+//         { upsert: true, new: true }
+//       )
   
-      matchStored.picks.pull(null)
-      matchStored.posts.pull(null)
-      await matchStored.save()
-        return matchStored
-    }
+//       matchStored.picks.pull(null)
+//       matchStored.posts.pull(null)
+//       await matchStored.save()
+//         return matchStored
+//     }
+
+matchSchema.statics.addOne = async ({
+  match
+}, pickId, postId) => {
+  let matchStored
+  const id = await match_genId()
+  const id_str = id.toString()
+    matchStored = await mongoose.model('Match').create(
+      {
+          ...match,
+          ...(!match.id ? { id } : {}),
+          ...(!match.id_str ? { id_str } : {}),
+      
+        }
+    )
+
+      return matchStored
+  }
 
 // Define the static function to retrieve all matches
 matchSchema.statics.getMatches = async ({query, isBestMatchOnly = false, page = 1}) => {

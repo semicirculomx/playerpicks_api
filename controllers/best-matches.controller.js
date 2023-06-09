@@ -24,17 +24,6 @@ exports.addPicksAndPostsToMatch = async (bets, pickId, postId) => {
         const matchResult = await Match.addOne({ match }, pickId, postId);
         matchId = matchResult._id;
         existingMatches.set(match_id, matchId);
-      } else {
-        match = await Match.findById(matchId);
-        if (pickId && !match.picks.includes(pickId)) {
-          match.picks.push(pickId);
-        }
-
-        if (postId && !match.posts.includes(postId)) {
-          match.posts.push(postId);
-        }
-
-        await match.save();
       }
       matchIds.push(matchId);
       newBets.push({ ..._bet, match: matchId });
@@ -45,6 +34,45 @@ exports.addPicksAndPostsToMatch = async (bets, pickId, postId) => {
     throw new Error(`Error adding picks and posts to match: ${error.message}`);
   }
 };
+// exports.addPicksAndPostsToMatch = async (bets, pickId, postId) => {
+//   try {
+//     const existingMatches = new Map();
+//     const matchIds = [];
+
+//     const newBets = [];
+
+//     for (const { match: { match_id, customOption, ...rest }, ..._bet } of bets) {
+//       let matchId;
+//       let match;
+
+//       matchId = existingMatches.get(match_id);
+
+//       if (!matchId) {
+//         match = { match_id, ...rest };
+//         const matchResult = await Match.addOne({ match }, pickId, postId);
+//         matchId = matchResult._id;
+//         existingMatches.set(match_id, matchId);
+//       } else {
+//         match = await Match.findById(matchId);
+//         if (pickId && !match.picks.includes(pickId)) {
+//           match.picks.push(pickId);
+//         }
+
+//         if (postId && !match.posts.includes(postId)) {
+//           match.posts.push(postId);
+//         }
+
+//         await match.save();
+//       }
+//       matchIds.push(matchId);
+//       newBets.push({ ..._bet, match: matchId });
+//     }
+
+//     return newBets;
+//   } catch (error) {
+//     throw new Error(`Error adding picks and posts to match: ${error.message}`);
+//   }
+// };
 // exports.addPicksAndPostsToMatch = async (bets, pickId, postId) => {
 //   try {
 //     const existingMatches = new Map();
