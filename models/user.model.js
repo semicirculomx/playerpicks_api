@@ -221,7 +221,7 @@ userSchema.methods.updateUserFromPick = async function (pick, prevPick) {
     let accBank = this.accBank
     let won_bets = this.won_bets
     let lost_bets = this.lost_bets
-
+    console.log(this)
     try {
         if(accBank === null) {
             accBank = 0;
@@ -274,20 +274,28 @@ userSchema.methods.updateUserFromPick = async function (pick, prevPick) {
                 }
             }
         } else {
-            if (pick.$isDeleted()) {
-                won_bets *= -1
-                lost_bets *= -1
-                pick.profit *= -1
-                pick.stake *= -1
-            }
+
             if (pick.status === 'won') {
-                won_bets++
-                accBank = this.accBank + pick.profit
-            } else if (pick.status === 'lost' || pick.status === 'pending') {
-                if(pick.status === 'lost'){
-                    lost_bets++
+                if (pick.$isDeleted()) {
+                    won_bets--
+                    accBank = this.accBank - pick.profit
+                } else {
+                    won_bets++
+                    accBank = this.accBank + pick.profit
                 }
-                accBank = this.accBank - (pick.stake * 250)
+            } else if (pick.status === 'lost' || pick.status === 'pending') {
+                if (pick.$isDeleted()) {
+                    if(pick.status === 'lost'){
+                        lost_bets--
+                    }
+                    accBank = this.accBank + (pick.stake * 250)
+                } else {
+                    if(pick.status === 'lost'){
+                        lost_bets++
+                    }
+                    accBank = this.accBank - (pick.stake * 250)
+                }
+
             }
         }
         // Update user document in database
