@@ -60,6 +60,9 @@ const pickSchema = mongoose.Schema({
      default: 'pending'
     },
     "created_at": { type: Date, default: Date.now },
+    "isPremium": { type: Boolean, default: false},
+    "categories": [{ type: String, default: null }],
+
     
 })
 let sPage = 10

@@ -57,7 +57,7 @@ exports.uploadImagesToCloudinary = async (req, res, next) => {
 exports.createPostAndPick = async (req, res, next) => {
     try {
       const user = req.user;
-      const { post: { post_title, htmlContent, text, post_categories }, pick, ...rest } = req.body;
+      const { post: { post_title, htmlContent, text, categories, isPremium }, pick, ...rest } = req.body;
   
       let _post = null;
       let pickStored = null;
@@ -68,12 +68,14 @@ exports.createPostAndPick = async (req, res, next) => {
           text: filterInput(text, 'html', { max_length: 60000, identifier: 'Post' }),
           post_title,
           htmlContent,
-          post_categories: post_categories.length ? post_categories.map((cat) => cat.toLowerCase()): post_categories,
+          isPremium,
+          post_categories: categories.length ? categories.map((cat) => cat.toLowerCase()): categories,
         };
         _post = await Post.addOne({ user_id: user._id }, postBody);
       }
   
       if (pick.bets?.length) {
+        pick.categories = pick.categories.length ? pick.categories.map((cat) => cat.toLowerCase()): []
         const { bets, ..._pick } = pick;
         pickStored = await Pick.addOne({ user_id: user._id }, _pick);
         storedBets = await addPicksAndPostsToMatch(bets, pickStored._id, _post?._id);

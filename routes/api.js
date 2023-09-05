@@ -22,8 +22,11 @@ const {
     updateUser,
     getFollowers,
     getFriends,
+    getSubscribers,
+    cancelSubscription,
+    subscribeToTipster,
 } = require('../controllers/user.controller')
-const { homeTimeline, userPosts, userTimeline, userPicks } = require('../controllers/timeline.controller')
+const { homeTimeline, userPosts, userTimeline, userPicks, homePicksTimeline } = require('../controllers/timeline.controller')
 const { createMatch, getBestMatches, getMatch, deleteMatch } = require('../controllers/best-matches.controller')
 const { getMyPicks, updatePick, deleteOnePick , getPick} = require('../controllers/picks.controller')
 const { search, trends, userSuggests } = require('../controllers/search.controller')
@@ -33,6 +36,7 @@ const {
     subscribeDevice,
     unsubscribeDevice,
 } = require('../controllers/notifications.controller')
+const { checkSubscription } = require('../controllers/subscriptions.controller')
 
 
 const router = express.Router()
@@ -69,6 +73,14 @@ const router = express.Router()
 //         next(error);
 //       }
 // })
+
+// POST subscribe to premium
+router.post('/subscriptions/premium/subscribe', ensureLoggedIn, subscribeToTipster);
+// POST cancel premium subscription
+router.post('/subscriptions/premium/cancel', ensureLoggedIn, cancelSubscription);
+// GET user's premium subscription status
+router.get('/subscriptions/premium/:userid', ensureLoggedIn, getSubscribers);
+
 /* POST read notification*/
 router.post('/notification_read/:_id', ensureLoggedIn, notificationRead)
 
@@ -79,15 +91,17 @@ router.get('/notifications', ensureLoggedIn, getNotifications)
 router.post('/notifications/subscribe', ensureLoggedIn, subscribeDevice)
 router.post('/notifications/unsubscribe', ensureLoggedIn, unsubscribeDevice)
 
-/* GET home page. */
+/* GET posts in home page. */
 router.get('/home_timeline', ensureLoggedIn, homeTimeline)
+/* GET picks in home page. */
+router.get('/picks_timeline', ensureLoggedIn, homePicksTimeline)
 
 /* GET best matches page. */
 router.get('/matches', ensureLoggedIn, getBestMatches)
 router.get('/match/:matchId', ensureLoggedIn, getMatch)
 router.delete('/match/:matchId', ensureLoggedIn, deleteMatch)
 
-router.get('/picks', getMyPicks)
+router.get('/picks_timeline', getMyPicks)
 //router.get('/pick/:id', getPick)
 router.put('/pick/:id', ensureLoggedIn, updatePick)
 router.delete('/pick/:id', ensureLoggedIn, deleteOnePick)

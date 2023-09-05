@@ -71,6 +71,36 @@ timelineSchema.statics.getTimeline = async function ({
     posts = posts.map(obj => obj.post_id);
     return {posts};
 }
+
+timelineSchema.statics.getPicksTimeline = async function ({
+    username: screen_name = null,
+    user_id = null
+}, page = 1) {
+    let p = parseInt(page); //page/batch number
+    const s = 10; //size of page/batch
+    /**
+     * s = 20
+     * $slice -> [skip, size] in mongo
+     * 1 --> [0, 20] | [s * (p - 1), s]  | would be [s * (p - 1), s * p] index based
+     * 2 --> [20, 20]
+     * 3 --> [40, 20]
+     */
+    if (!user_id) {
+        let { _id } = await mongoose.model('User')
+            .findOne({ screen_name }, '_id');
+        user_id = _id;
+    }
+    let { picks } = await mongoose.model('home_timeline') //or this
+        .findOne({ user_id },
+            { 
+            picks: { $slice: [s * (p - 1), s] },
+         }) //returns
+        .populate({
+            path: 'picks.pick_id',           
+        })
+    picks = picks.map(obj => obj.pick_id);
+    return {picks};
+}
 /**<Model>.bulkAddPosts
  * calls <Document>.bulkAddPosts() of each user_id with remaining args
  * @param {Array} user_id - array of user._id's of concerned users

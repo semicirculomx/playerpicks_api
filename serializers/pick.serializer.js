@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const { serializeUser } = require('./user.serializer');
 
+
 exports.serializePick = async (pick, client) => {
   if (!pick) {
     return;
@@ -14,8 +15,9 @@ exports.serializePick = async (pick, client) => {
         path: 'bets.match'
     })
     .execPopulate();
+      //serialize user field
   if (!pick.user)
-    throw Error("Picks doesnt have a user field")
+      throw Error("Pick doesnt have a user field")
   let user = await serializeUser(pick.user, client)
   pick = pick.toObject();
   return {

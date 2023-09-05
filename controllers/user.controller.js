@@ -1,5 +1,7 @@
 const User = require('../models/user.model')
 const Friendship = require('../models/friendship.model')
+const Subscription = require('../models/subscriptions.model'); // Adjust the path as needed
+
 const { serializeUser, serializeUsers } = require('../serializers/user.serializer')
 const { filterInput, ensureCorrectImage } = require('../utils/helpers')
 const assert = require('assert')
@@ -159,3 +161,68 @@ exports.getFriends = async (req, res, next) => {
         next(err)
     }
 }
+exports.subscribeToTipster = async (req, res, next) => {
+        try {
+            let tipsterId = req.user._id
+            let tipster = await User.findById(tipsterId, '_id')
+
+            let user = await User.findOne({ screen_name: req.body.username }, '_id')
+            if (!user) throw Error('username does not exist')
+            const result = await Subscription.subscribeUser(tipster, user);
+    
+            res.json({
+                message: 'success',
+            })
+        } catch (err) {
+            next(err)
+        }
+};
+
+exports.cancelSubscription = async (req, res, next) => {
+    try {
+        let tipsterId = req.user._id
+        let tipster = await User.findById(tipsterId, '_id')
+
+        let user = await User.findOne({ screen_name: req.body.username }, '_id')
+        if (!user) throw Error('username does not exist')
+
+        const result = await Subscription.unsubscribeUser(tipster, user);
+
+        res.json({
+            result: result,
+            message: 'success',
+        })
+    } catch (err) {
+        next(err)
+    }
+};
+
+
+// Get Subscribers of a Tipster
+
+exports.getSubscribers = async (req, res, next) => {
+    try {
+        let userid = req.user._id;
+        const p = parseInt(req.query['p']); // page/batch number
+        const s = 20; // size of page/batch
+        
+        const user = await User.findOne({ _id: userid }, '_id');
+        if (!user) return res.status(400).json({ msg: 'Bad request' });
+
+        const doc = await Subscription.findOne(
+            { user_id: userid },
+            {
+                subscribers_ids: {
+                    $slice: [s * (p - 1), s],
+                },
+            }
+        ).populate('subscribers_ids');
+        if (!doc) return res.json({ users: null });
+
+        const users = await serializeUsers(doc.subscribers_ids, user); // Adjust the serialization function name if needed
+      console.log(users)
+      res.json({ users: users });
+    } catch (err) {
+        next(err);
+    }
+};

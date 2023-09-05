@@ -24,6 +24,21 @@ exports.homeTimeline = async (req, res, next) => {
         next(err)
     }
 }
+exports.homePicksTimeline = async (req, res, next) => {
+    try {
+        assert(mongoose.connection.readyState, 1);
+        let user = req.user;
+        assert.ok(user);
+        let page = req.query['p'];
+        let {picks} = /*list*/await home_timeline.getPicksTimeline({ user_id: user._id }, page);
+        picks = await serializePicks(picks, req.user)
+        res.json({
+            picks, //posts: null or empty when exhausts,
+        })
+    } catch (err) {
+        next(err)
+    }
+}
 exports.userTimeline = async (req, res, next) => {
     try {
         let username = req.params.username;
